@@ -60,7 +60,7 @@ Give a property investment review of:
 
 Include researched values based on comparable comps such as:
 - Value based on comparable homes
-- List comparable homes values
+- List comparable homes values (show home address and value, up to 3 comparables)
 - Rent estimate
 - 20% down payment amount
 - Estimated interest rate used for loan calculations
@@ -68,8 +68,7 @@ Include researched values based on comparable comps such as:
 - Net cash flow
 - Cash on cash return amount
 - Risk factors (flood, crime, schools)
-- Active listing on Zillow with asking price, formatted as:
-  "Listing on Zillow for asking price of $XXX"
+- include active listing link to zillow
 - Recommendation (buy/hold/sell)
 
 Keep your response concise and bullet-style."""
