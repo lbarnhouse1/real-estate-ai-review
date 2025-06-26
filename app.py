@@ -45,7 +45,7 @@ HTML_PAGE = """
 def index():
     return render_template_string(HTML_PAGE)
 
-@app.route("/review", methods=["POST"])
+@@app.route("/review", methods=["POST"])
 def review():
     address = request.json.get("address", "").strip()
     if not address:
@@ -64,14 +64,15 @@ Include:
 
     try:
         response = openai.ChatCompletion.create(
-            mmodel="gpt-3.5-turbo",
+            model="gpt-3.5-turbo",  # safer fallback model
             messages=[{"role": "user", "content": prompt}],
             max_tokens=400,
         )
         review = response.choices[0].message.content.strip()
         return jsonify({"review": review})
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        print("🔴 OpenAI API call failed:", e)
+        return jsonify({"error": f"OpenAI API error: {str(e)}"}), 500
 
 if __name__ == "__main__":
     import os
