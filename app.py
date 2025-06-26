@@ -59,8 +59,6 @@ Give a property investment review of:
 {address}
 
 Include researched values based on comparable comps such as:
-- Value based on comparable homes
-- List comparable homes values based on recently sold data (show home address and value, up to 3 comparables)
 - Rent estimate
 - 20% down payment amount
 - research current market interest rates for investment properties (range)
