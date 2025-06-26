@@ -54,13 +54,13 @@ def review():
     if not address:
         return jsonify({"error": "Address required"}), 400
 
-    prompt = f"""You are a real estate investment advisor that buys and rents houseing. Your are being asked to do a full review of a proprty to be sure we dont over pay for purchase or undercharge for rent.
+    prompt = f"""You are a real estate investment advisor that buys and rents houseing. Your are being asked to do a full review of a proprty to be sure we dont over pay for purchase or undercharge for rent. use data from zillow.com or realtor.com to get recent sales data. compare price per sqaurefootage of properties.
 Give a property investment review of:
 {address}
 
 Include researched values based on comparable comps such as:
 - Value based on comparable homes
-- List comparable homes values (show home address and value, up to 3 comparables)
+- List comparable homes values based on recently sold data (show home address and value, up to 3 comparables)
 - Rent estimate
 - 20% down payment amount
 - research current market interest rates for investment properties (range)
