@@ -72,6 +72,7 @@ Include:
         return jsonify({"review": review})
     except Exception as e:
         print("🔴 OpenAI API call failed:", e)
+        traceback.print_exc()  # prints full traceback to logs
         return jsonify({"error": f"OpenAI API error: {str(e)}"}), 500
 
 if __name__ == "__main__":
