@@ -54,13 +54,13 @@ def review():
     if not address:
         return jsonify({"error": "Address required"}), 400
 
-prompt = f"""You are a real estate investment advisor.
+    prompt = f"""You are a real estate investment advisor.
 Give a property investment review of:
 {address}
 
 Include researched values based on comparable comps such as:
 - Value based on comparable homes
-- list comparable homes values
+- List comparable homes values
 - Rent estimate
 - 20% down payment amount
 - Estimated interest rate used for loan calculations
@@ -74,18 +74,19 @@ Include researched values based on comparable comps such as:
 
 Keep your response concise and bullet-style."""
 
-try:
-        response = openai.ChatCompletion.create(
+    try:
+        response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=400,
         )
-        review = response.choices[0].message.content.strip()
-        return jsonify({"review": review})
+        review_text = response.choices[0].message.content.strip()
+        return jsonify({"review": review_text})
     except Exception as e:
-        print("🔴 OpenAI API call failed:", e)
+        traceback.print_exc()
         return jsonify({"error": f"OpenAI API error: {str(e)}"}), 500
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
+
