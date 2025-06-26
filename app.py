@@ -45,7 +45,7 @@ HTML_PAGE = """
 def index():
     return render_template_string(HTML_PAGE)
 
-@@app.route("/review", methods=["POST"])
+@app.route("/review", methods=["POST"])
 def review():
     address = request.json.get("address", "").strip()
     if not address:
