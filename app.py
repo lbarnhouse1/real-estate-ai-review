@@ -58,12 +58,17 @@ def review():
 Give a property investment review of:
 {address}
 
-Include:
+Include researched values based on comparable comps such as:
 - Rent estimate
-- PITI estimate
+- 20% down payment amount
+- Estimated interest rate used for loan calculations
+- PITI estimate based on that interest rate
 - Net cash flow
+- Cash on cash return amount
 - Risk factors (flood, crime, schools)
-- Recommendation (buy/hold/sell)"""
+- Active listing on Zillow with asking price, formatted as:
+  "Listing on Zillow for asking price of $XXX"
+- Recommendation (buy/hold/sell)
 
     try:
         response = client.chat.completions.create(
