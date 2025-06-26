@@ -1,4 +1,5 @@
 flask
-openai==1.0.0
 python-dotenv
 gunicorn
+openai>=1.0.0
+httpx>=0.24.0
