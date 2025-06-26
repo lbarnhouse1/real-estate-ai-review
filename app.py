@@ -63,12 +63,12 @@ Include researched values based on comparable comps such as:
 - List comparable homes values (show home address and value, up to 3 comparables)
 - Rent estimate
 - 20% down payment amount
-- Estimated interest rate used for loan calculations
+- research current market interest rates for investment properties (range)
+- use higher of the ranger of the interest rate for investment properties from previous prompt
 - PITI estimate based on that interest rate
 - Net cash flow
 - Cash on cash return amount
 - Risk factors (flood, crime, schools)
-- include active listing link to zillow
 
 Keep your response concise"""
 
