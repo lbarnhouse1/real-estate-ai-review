@@ -59,6 +59,8 @@ Give a property investment review of:
 {address}
 
 Include researched values based on comparable comps such as:
+- Value based on comparable homes
+- list comparable homes values
 - Rent estimate
 - 20% down payment amount
 - Estimated interest rate used for loan calculations
@@ -72,8 +74,8 @@ Include researched values based on comparable comps such as:
 
 Keep your response concise and bullet-style."""
 
-    try:
-        response = client.chat.completions.create(
+try:
+        response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": prompt}],
             max_tokens=400,
@@ -81,7 +83,7 @@ Keep your response concise and bullet-style."""
         review = response.choices[0].message.content.strip()
         return jsonify({"review": review})
     except Exception as e:
-        traceback.print_exc()
+        print("🔴 OpenAI API call failed:", e)
         return jsonify({"error": f"OpenAI API error: {str(e)}"}), 500
 
 if __name__ == "__main__":
