@@ -54,7 +54,7 @@ def review():
     if not address:
         return jsonify({"error": "Address required"}), 400
 
-    prompt = f"""You are a real estate investment advisor.
+prompt = f"""You are a real estate investment advisor.
 Give a property investment review of:
 {address}
 
@@ -69,6 +69,8 @@ Include researched values based on comparable comps such as:
 - Active listing on Zillow with asking price, formatted as:
   "Listing on Zillow for asking price of $XXX"
 - Recommendation (buy/hold/sell)
+
+Keep your response concise and bullet-style."""
 
     try:
         response = client.chat.completions.create(
