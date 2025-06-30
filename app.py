@@ -14,7 +14,7 @@ HTML_PAGE = """
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f4f7fa; }
     .container { max-width: 700px; margin: auto; background: white; padding: 30px; box-shadow: 0 0 10px #ccc; }
-    input, button, textarea { padding: 12px; width: 100%; margin-top: 10px; font-size: 16px; }
+    input, button, select, textarea { padding: 12px; width: 100%; margin-top: 10px; font-size: 16px; }
     .output { margin-top: 20px; background: #eef; padding: 15px; white-space: pre-wrap; }
   </style>
 </head>
@@ -22,6 +22,16 @@ HTML_PAGE = """
   <div class="container">
     <h2>Real Estate AI Review</h2>
     <input id="addressInput" placeholder="Enter property address (required)" required />
+    <input id="sqftInput" placeholder="Total square footage (optional)" />
+    <label for="gradeInput">Property Condition Grade:</label>
+    <select id="gradeInput">
+      <option value="">Select Grade (optional)</option>
+      <option value="A">A - Move-in ready, no work needed</option>
+      <option value="B">B - Minor cosmetic updates</option>
+      <option value="C">C - Moderate updates/renovation</option>
+      <option value="D">D - Major renovations needed</option>
+      <option value="F">F - Tear down / not livable</option>
+    </select>
 
     <h3>Comparable Sales (Optional)</h3>
     <div id="comps">
@@ -48,6 +58,8 @@ HTML_PAGE = """
   <script>
     async function getReview() {
       const address = document.getElementById("addressInput").value.trim();
+      const sqft = document.getElementById("sqftInput").value.trim();
+      const grade = document.getElementById("gradeInput").value;
 
       const compInputs = document.querySelectorAll("#comps input");
       const comps = Array.from(compInputs).map(i => i.value.trim()).filter(Boolean);
@@ -60,7 +72,7 @@ HTML_PAGE = """
       const response = await fetch("/review", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ address, comps, rentComps })
+        body: JSON.stringify({ address, comps, rentComps, sqft, grade })
       });
 
       const data = await response.json();
@@ -81,41 +93,55 @@ def review():
     address = data.get("address", "").strip()
     comps = data.get("comps", [])
     rent_comps = data.get("rentComps", [])
+    sqft = data.get("sqft", "").strip()
+    grade = data.get("grade", "").strip().upper()
 
     if not address:
         return jsonify({"error": "Address is required."}), 400
 
-    comp_section = "\nUser-provided comparable sales:\n" + "\n".join(f"- {c}" for c in comps) if comps else ""
-    rent_section = "\nUser-provided rent comps:\n" + "\n".join(f"- {r}" for r in rent_comps) if rent_comps else ""
+    comp_section = "\nComparable sales provided by user:\n" + "\n".join(f"- {c}" for c in comps) if comps else ""
+    rent_section = "\nRental comps provided by user:\n" + "\n".join(f"- {r}" for r in rent_comps) if rent_comps else ""
+    sqft_section = f"\nTotal square footage: {sqft}" if sqft else ""
+    grade_section = f"\nProperty condition grade (A–F): {grade}" if grade else ""
 
-    prompt = f"""You are a real estate investment advisor.
-Give a property investment review of:
-{address}
+    prompt = f"""
+You are a professional real estate investment analyst.
 
-Use the following structure:
+Perform a comprehensive investment review for the following subject property:
+- Address: {address}
+{sqft_section}
+{grade_section}
 
+If provided, incorporate these data points into your analysis:
 {comp_section}
 {rent_section}
 
-Provide:
-- Estimated value based on comps
-- List up to 3 recent comparable homes with address and value
-- Rent estimate (use rent comps if provided)
-- 20% down payment amount
-- Estimated interest rate used for loan calculation
-- PITI estimate (based on the interest rate)
-- Net cash flow
-- Cash-on-cash return
-- Risk factors (flood, crime, schools)
+Your response should include:
 
-Respond clearly and concisely in bullet points.
+1. 🔍 **Estimated Market Value** based on comparable sales and square footage. Clearly state the approach used (e.g., average $/sqft, adjusted for condition).
+2. 🏠 **Top 3 Comparable Properties** (address + sale price) that support the valuation.
+3. 💵 **Rent Estimate**, using provided rent comps or market averages if unavailable.
+4. 📊 **20% Down Payment** and estimated **loan details**:
+   - Assume a 30-year fixed mortgage
+   - Use a realistic interest rate and state what you used
+5. 📉 **Monthly PITI Estimate**
+6. 💰 **Net Cash Flow** and **Cash-on-Cash Return**
+7. ⚠️ **Risk Factors**: Include local crime, flood zone risk, and school quality.
+8. 🏷️ **Zillow Listing Note** (if property is actively for sale)
+   - Format: “Listed on Zillow for asking price of $XXX”
+
+9. ✅ **Investment Recommendation**:
+   - Choose from: Buy, Hold, or Sell
+   - Provide 1–2 sentence rationale
+
+Respond in clear, professional bullet-point format.
 """
 
     try:
         response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=700,
+            max_tokens=800,
         )
         review = response.choices[0].message.content.strip()
         return jsonify({"review": review})
