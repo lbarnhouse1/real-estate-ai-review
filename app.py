@@ -13,42 +13,61 @@ HTML_PAGE = """
   <title>Real Estate AI Review</title>
   <style>
     body { font-family: sans-serif; padding: 20px; background: #f4f7fa; }
-    .container { max-width: 700px; margin: auto; background: white; padding: 30px; box-shadow: 0 0 10px #ccc; }
-    input, button, select, textarea { padding: 12px; width: 100%; margin-top: 10px; font-size: 16px; }
+    .container { max-width: 800px; margin: auto; background: white; padding: 30px; box-shadow: 0 0 10px #ccc; }
+    input, button, select, textarea { padding: 10px; width: 100%; margin-top: 10px; font-size: 15px; }
     .output { margin-top: 20px; background: #eef; padding: 15px; white-space: pre-wrap; }
+    .compRow { display: flex; gap: 8px; margin-top: 5px; }
+    .compRow input, .compRow select { flex: 1; }
   </style>
 </head>
 <body>
   <div class="container">
     <h2>Real Estate AI Review</h2>
-    <input id="addressInput" placeholder="Enter property address (required)" required />
+    <input id="addressInput" placeholder="Property address (required)" required />
     <input id="sqftInput" placeholder="Total square footage (optional)" />
     <label for="gradeInput">Property Condition Grade:</label>
     <select id="gradeInput">
       <option value="">Select Grade (optional)</option>
-      <option value="A">A - Move-in ready, no work needed</option>
+      <option value="A">A - Move-in ready</option>
       <option value="B">B - Minor cosmetic updates</option>
-      <option value="C">C - Moderate updates/renovation</option>
-      <option value="D">D - Major renovations needed</option>
-      <option value="F">F - Tear down / not livable</option>
+      <option value="C">C - Moderate updates</option>
+      <option value="D">D - Major renovations</option>
+      <option value="F">F - Tear down</option>
     </select>
 
     <h3>Comparable Sales (Optional)</h3>
     <div id="comps">
-      <input placeholder="Comp 1 (e.g., 123 Main St - $400,000)" />
-      <input placeholder="Comp 2" />
-      <input placeholder="Comp 3" />
-      <input placeholder="Comp 4" />
-      <input placeholder="Comp 5" />
+      <div class="compRow">
+        <input placeholder="Address" />
+        <input placeholder="Sold Price" />
+        <input placeholder="Sqft" />
+        <select>
+          <option value="">Grade</option>
+          <option>A</option><option>B</option><option>C</option><option>D</option><option>F</option>
+        </select>
+        <input placeholder="Year Sold" />
+      </div>
+      <div class="compRow">
+        <input placeholder="Address" />
+        <input placeholder="Sold Price" />
+        <input placeholder="Sqft" />
+        <select><option value="">Grade</option><option>A</option><option>B</option><option>C</option><option>D</option><option>F</option></select>
+        <input placeholder="Year Sold" />
+      </div>
+      <div class="compRow">
+        <input placeholder="Address" />
+        <input placeholder="Sold Price" />
+        <input placeholder="Sqft" />
+        <select><option value="">Grade</option><option>A</option><option>B</option><option>C</option><option>D</option><option>F</option></select>
+        <input placeholder="Year Sold" />
+      </div>
     </div>
 
     <h3>Rental Comps (Optional)</h3>
     <div id="rentComps">
-      <input placeholder="Rent Comp 1 (e.g., 456 Oak St - $1,800)" />
+      <input placeholder="Rent Comp 1 (e.g., 123 Main St - $1,900)" />
       <input placeholder="Rent Comp 2" />
       <input placeholder="Rent Comp 3" />
-      <input placeholder="Rent Comp 4" />
-      <input placeholder="Rent Comp 5" />
     </div>
 
     <button onclick="getReview()">Get AI Review</button>
@@ -61,8 +80,15 @@ HTML_PAGE = """
       const sqft = document.getElementById("sqftInput").value.trim();
       const grade = document.getElementById("gradeInput").value;
 
-      const compInputs = document.querySelectorAll("#comps input");
-      const comps = Array.from(compInputs).map(i => i.value.trim()).filter(Boolean);
+      const compRows = document.querySelectorAll("#comps .compRow");
+      const comps = Array.from(compRows).map(row => {
+        const inputs = row.querySelectorAll("input, select");
+        const [addr, price, sqft, grade, year] = Array.from(inputs).map(i => i.value.trim());
+        if (addr || price || sqft || grade || year) {
+          return { addr, price, sqft, grade, year };
+        }
+        return null;
+      }).filter(Boolean);
 
       const rentInputs = document.querySelectorAll("#rentComps input");
       const rentComps = Array.from(rentInputs).map(i => i.value.trim()).filter(Boolean);
@@ -99,20 +125,25 @@ def review():
     if not address:
         return jsonify({"error": "Address is required."}), 400
 
-    comp_section = "\nComparable sales provided by user:\n" + "\n".join(f"- {c}" for c in comps) if comps else ""
-    rent_section = "\nRental comps provided by user:\n" + "\n".join(f"- {r}" for r in rent_comps) if rent_comps else ""
+    comp_lines = []
+    for comp in comps:
+        line = f"- {comp.get('addr', '')} | ${comp.get('price', '')} | {comp.get('sqft', '')} sqft | Grade: {comp.get('grade', '')} | Year Sold: {comp.get('year', '')}"
+        comp_lines.append(line)
+    comp_section = "\nComparable Sales Provided:\n" + "\n".join(comp_lines) if comp_lines else ""
+
+    rent_section = "\nRental Comps Provided:\n" + "\n".join(f"- {r}" for r in rent_comps) if rent_comps else ""
     sqft_section = f"\nTotal square footage: {sqft}" if sqft else ""
     grade_section = f"\nProperty condition grade (A–F): {grade}" if grade else ""
 
     prompt = f"""
 You are a professional real estate investment analyst.
 
-Perform a comprehensive investment review for the following subject property:
+Analyze this subject property:
 - Address: {address}
 {sqft_section}
 {grade_section}
 
-If provided, incorporate these data points into your analysis:
+Use the following if provided:
 {comp_section}
 {rent_section}
 
