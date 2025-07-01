@@ -1,8 +1,7 @@
 import os
 import traceback
-from flask import Flask, request, jsonify, render_template_string, send_file
+from flask import Flask, request, jsonify, render_template_string
 from openai import OpenAI
-from io import BytesIO
 
 app = Flask(__name__)
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
@@ -25,7 +24,7 @@ HTML_PAGE = """
   <div class="container">
     <h2>Real Estate AI Review</h2>
     <input id="addressInput" placeholder="Property address (required)" required />
-    <input id="sqftInput" placeholder="Total square footage (optional)" type="number" min="0" />
+    <input id="sqftInput" placeholder="Total square footage (optional)" />
     <label for="gradeInput">Property Condition Grade:</label>
     <select id="gradeInput">
       <option value="">Select Grade (optional)</option>
@@ -35,61 +34,68 @@ HTML_PAGE = """
       <option value="D">D - Major renovations</option>
       <option value="F">F - Tear down</option>
     </select>
-    <input id="interestRate" placeholder="Interest rate (optional, e.g., 7.25%)" type="text" />
+    <input id="interestRate" placeholder="Interest rate (optional, e.g., 7.25%)" />
 
     <h3>Comparable Sales (Optional)</h3>
     <div id="comps">
       <div class="compRow">
         <input placeholder="Address" />
-        <input placeholder="Sold Price (e.g., 450000)" type="number" min="0" />
-        <input placeholder="Sqft (e.g., 1800)" type="number" min="0" />
-        <select>
-          <option value="">Grade</option>
-          <option>A</option><option>B</option><option>C</option><option>D</option><option>F</option>
-        </select>
-        <input placeholder="Year Sold (e.g., 2023)" type="number" min="1900" max="2099" />
+        <input placeholder="Sold Price (e.g., 450000)" />
+        <input placeholder="Sqft (e.g., 1800)" />
+        <select><option value="">Grade</option><option>A</option><option>B</option><option>C</option><option>D</option><option>F</option></select>
+        <select><option value="">Year Sold</option><option>2020</option><option>2021</option><option>2022</option><option>2023</option><option>2024</option><option>2025</option></select>
       </div>
       <div class="compRow">
         <input placeholder="Address" />
-        <input placeholder="Sold Price (e.g., 450000)" type="number" min="0" />
-        <input placeholder="Sqft (e.g., 1800)" type="number" min="0" />
+        <input placeholder="Sold Price (e.g., 450000)" />
+        <input placeholder="Sqft (e.g., 1800)" />
         <select><option value="">Grade</option><option>A</option><option>B</option><option>C</option><option>D</option><option>F</option></select>
-        <input placeholder="Year Sold (e.g., 2023)" type="number" min="1900" max="2099" />
+        <select><option value="">Year Sold</option><option>2020</option><option>2021</option><option>2022</option><option>2023</option><option>2024</option><option>2025</option></select>
       </div>
       <div class="compRow">
         <input placeholder="Address" />
-        <input placeholder="Sold Price (e.g., 450000)" type="number" min="0" />
-        <input placeholder="Sqft (e.g., 1800)" type="number" min="0" />
+        <input placeholder="Sold Price (e.g., 450000)" />
+        <input placeholder="Sqft (e.g., 1800)" />
         <select><option value="">Grade</option><option>A</option><option>B</option><option>C</option><option>D</option><option>F</option></select>
-        <input placeholder="Year Sold (e.g., 2023)" type="number" min="1900" max="2099" />
+        <select><option value="">Year Sold</option><option>2020</option><option>2021</option><option>2022</option><option>2023</option><option>2024</option><option>2025</option></select>
       </div>
     </div>
 
     <h3>Rental Comps (Optional)</h3>
     <div id="rentComps">
-      <input placeholder="Rent Comp 1 (e.g., 123 Main St - $1,900)" />
-      <input placeholder="Rent Comp 2" />
-      <input placeholder="Rent Comp 3" />
+      <div class="compRow">
+        <input placeholder="Address" />
+        <input placeholder="Monthly Rent (e.g., 1900)" />
+        <input placeholder="Sqft" />
+        <select><option value="">Beds</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <select><option value="">Baths</option><option>1</option><option>1.5</option><option>2</option><option>2.5</option><option>3</option></select>
+      </div>
+      <div class="compRow">
+        <input placeholder="Address" />
+        <input placeholder="Monthly Rent (e.g., 1900)" />
+        <input placeholder="Sqft" />
+        <select><option value="">Beds</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <select><option value="">Baths</option><option>1</option><option>1.5</option><option>2</option><option>2.5</option><option>3</option></select>
+      </div>
+      <div class="compRow">
+        <input placeholder="Address" />
+        <input placeholder="Monthly Rent (e.g., 1900)" />
+        <input placeholder="Sqft" />
+        <select><option value="">Beds</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+        <select><option value="">Baths</option><option>1</option><option>1.5</option><option>2</option><option>2.5</option><option>3</option></select>
+      </div>
     </div>
 
     <button onclick="getReview()">Get AI Review</button>
-    <button onclick="downloadTxt()">Download</button>
     <div id="aiOutput" class="output"></div>
   </div>
 
   <script>
-    let latestReview = "";
-
     async function getReview() {
       const address = document.getElementById("addressInput").value.trim();
       const sqft = document.getElementById("sqftInput").value.trim();
       const grade = document.getElementById("gradeInput").value;
       const interestRate = document.getElementById("interestRate").value.trim();
-
-      if (!address) {
-        alert("Address is required.");
-        return;
-      }
 
       const compRows = document.querySelectorAll("#comps .compRow");
       const comps = Array.from(compRows).map(row => {
@@ -101,8 +107,15 @@ HTML_PAGE = """
         return null;
       }).filter(Boolean);
 
-      const rentInputs = document.querySelectorAll("#rentComps input");
-      const rentComps = Array.from(rentInputs).map(i => i.value.trim()).filter(Boolean);
+      const rentRows = document.querySelectorAll("#rentComps .compRow");
+      const rentComps = Array.from(rentRows).map(row => {
+        const inputs = row.querySelectorAll("input, select");
+        const [addr, rent, sqft, beds, baths] = Array.from(inputs).map(i => i.value.trim());
+        if (addr || rent || sqft || beds || baths) {
+          return { addr, rent, sqft, beds, baths };
+        }
+        return null;
+      }).filter(Boolean);
 
       document.getElementById("aiOutput").innerText = "Loading...";
 
@@ -114,18 +127,6 @@ HTML_PAGE = """
 
       const data = await response.json();
       document.getElementById("aiOutput").innerText = data.review || data.error || "Error.";
-      latestReview = data.review;
-    }
-
-    function downloadTxt() {
-      if (!latestReview) return;
-      const blob = new Blob([latestReview], { type: 'text/plain' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'ai_review.txt';
-      a.click();
-      URL.revokeObjectURL(url);
     }
   </script>
 </body>
@@ -155,7 +156,12 @@ def review():
         comp_lines.append(line)
     comp_section = "\nComparable Sales Provided:\n" + "\n\n".join(comp_lines) if comp_lines else ""
 
-    rent_section = "\nRental Comps Provided:\n" + "\n".join(f"- {r}" for r in rent_comps) if rent_comps else ""
+    rent_lines = []
+    for rent in rent_comps:
+        line = f"Address: {rent.get('addr', '')}\n- Rent: ${rent.get('rent', '')}\n- Size: {rent.get('sqft', '')} sqft\n- Beds: {rent.get('beds', '')}\n- Baths: {rent.get('baths', '')}"
+        rent_lines.append(line)
+    rent_section = "\nRental Comps Provided:\n" + "\n\n".join(rent_lines) if rent_lines else ""
+
     sqft_section = f"\nTotal square footage: {sqft}" if sqft else ""
     grade_section = f"\nProperty condition grade (A–F): {grade}" if grade else ""
     rate_section = f"\nUse this interest rate: {interest_rate}" if interest_rate else ""
@@ -173,19 +179,23 @@ Use the following if provided:
 {comp_section}
 {rent_section}
 
-Respond in clear, professional bullet-point format. When performing calculations:
-- Use realistic and explainable logic
-- Show your math briefly
-- Do not make assumptions outside the provided inputs
+Your response should include:
 
-Respond with:
-1. 🔍 Estimated Market Value
-2. 💵 Rent Estimate
-3. 📊 20% Down Payment and Loan Terms (state interest rate used)
-4. 📉 Monthly PITI Breakdown
-5. 💰 Net Cash Flow & Cash-on-Cash Return
-6. ⚠️ Risk Factors (e.g., crime, flood zone, schools)
-7. ✅ Investment Recommendation (Buy, Hold, or Sell)
+1. 🔍 **Estimated Market Value** based on comparable sales and square footage. Clearly state the approach used (e.g., average $/sqft, adjusted for condition).
+2. 💵 **Rent Estimate**, using provided rent comps or market averages if unavailable.
+3. 📊 **20% Down Payment** and estimated **loan details**:
+   - Assume a 30-year fixed mortgage
+   - Use a realistic interest rate and state what you used
+   - Property tax = 1.25% annually
+   - Insurance = 0.35% annually
+4. 📉 **Monthly PITI Estimate**
+5. 💰 **Net Cash Flow** and **Cash-on-Cash Return**
+6. ⚠️ **Risk Factors**: Include local crime, flood zone risk, and school quality.
+7. ✅ **Investment Recommendation**:
+   - Choose from: Buy, Hold, or Sell
+   - Provide 1–2 sentence rationale
+
+Respond in clear, professional bullet-point format.
 """
 
     try:
